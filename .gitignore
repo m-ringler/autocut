@@ -1,5 +1,25 @@
 # Compiled class file
+/main/classes
+/main/releases
+/main/*.jar
+/libraries/commons-math-2.0/*
 *.class
+**/doc/*
+**/docs/*
+
+# Test stuff
+/test
+
+# Audio files (may be copyrighted)
+/markers/*
+*.mp3
+*.mpd
+
+# Generated patterns
+*.pattern
+
+# javadoc
+/main/doc
 
 # Log file
 *.log
@@ -11,7 +31,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.nar
 *.ear
@@ -21,3 +40,8 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+.svn
+*.jsmooth
+*~
+

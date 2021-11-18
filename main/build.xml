@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!--<!DOCTYPE project SYSTEM "http://mp3dings.sf.net/ant.dtd">-->
+<!--
+   $Id: build.xml 433 2009-10-27 20:34:01Z ringler $
+   Buildfile for mp3autocut.
+   This file needs ant-shared.xml present in the same directory.
+   (c) Moritz Ringler, 2007
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<project name="mp3autocut" default="dist.bin" basedir=".">
+    <description>
+    Buildfile for the mp3autocut application. To successfully build the application
+    you need the following libraries
+    lib/jl1.0.1.jar
+  </description>
+  <!-- global properties used by ant-shared.xml -->
+    <property name="src" value="src"/>
+    <property name="build" value="classes"/>
+
+    <property name="javadoc" value="doc/api"/>
+    <property name="app.packagePath" value="de/mospace/hspiel/mp3autocut/** helliker/id3/**"/>
+    <property name="app" value="de.mospace.hspiel.mp3autocut" />
+    <property name="app.license.gpl3" value="true"/>
+    <property name="app.packageList" value="${app}, helliker.id3"/>
+    <property name="app.mainClass" value="${app}.MP3AutoCut"/>
+    <property name="app.default.args" value="testout/"/>
+    <available property="mp3autocut.hasMarkers" file="../markers/"/>
+    <available property="mp3autocut.doHtmlToText" file="htmlToTxt.sh"/>
+
+  <!-- Libraries -->
+    <property name="app.includeLibs" value="true" />
+    <property name="app.libraries" value="lib/jl1.0.1.jar;lib/commons-math-2.0.jar" />
+    <property name="app.lib" value=" lib/jl1.0.1.jar lib/commons-math-2.0.jar"/>
+
+    <property name="app.name" value="mp3autocut"/>
+    <property name="app.javaVersion" value="1.6"/>
+    <property name="app.icon" value="${src}/net/sourceforge/gpstools/mp3autocut.png"/>
+    <property name="app.jsmooth.skeleton" value="Console Wrapper"/>
+
+   <!-- IMPORT SHARED TARGETS -->
+    <import file="./ant-shared.xml"/>
+
+    <target name="copy" depends="shared.copy">
+    <!-- if you change the following section you must run the clean target once -->
+        <replaceregexp file="${build}/de/mospace/hspiel/mp3autocut/version.properties" byline="true" match="build=.*" replace="build=${DSTAMP}${TSTAMP}"/>
+    </target>
+
+    <target name="defaultMarkers.jar">
+        <property name="markerdir" value="${user.home}/.mp3autocut/markers" />
+        <!-- create symbolic links to mp3 markers in $HOME/.mp3autocut/markers -->
+        <apply dir="." executable="/bin/ln" >
+            <arg value="-s"/>
+            <arg value="-t"/>
+            <arg value="${markerdir}"/>
+            <fileset dir="../markers" includes="*.mp3"/>
+        </apply>
+        <!-- delete pattern markers in $HOME/.mp3autocut/markers -->
+        <delete dir="${markerdir}" includes="*.pattern"/>
+        <!-- create symbolic links to mp3 markers in ../markers/genpattern -->
+        <apply dir="." executable="/bin/ln" >
+            <arg value="-s"/>
+            <srcfile />
+            <targetfile />
+            <fileset dir="../markers" includes="*_start.mp3"/>
+            <mapper type="glob" from="*_start.mp3" to="../markers/genpattern/*_2009-12-31.mp3"/>
+        </apply>
+        <!-- run mp3autocut on all mp3s in /markers/genpattern
+            this will create pattern markers in the markerdir
+        -->
+        <fileset dir="../markers/genpattern" id="myTxts" includes="*.mp3"/>
+        <pathconvert property="fileargs1" refid="myTxts" pathsep=" " />
+        <java fork="true" jar="${ant.project.name}.jar">
+            <arg value="mpd"/>
+            <arg line="${fileargs1}"/>
+        </java>
+        <!-- create symbolic links to pattern markers in ../markers -->
+        <apply dir="." executable="/bin/ln" >
+            <arg value="-s"/>
+            <arg value="-t"/>
+            <arg value="../markers"/>
+            <fileset dir="${markerdir}" includes="*.pattern"/>
+        </apply>
+        <!-- pack pattern markers into defaultMarkers.jar/markers -->
+        <jar basedir=".." destfile="defaultMarkers.jar" includes="markers/*.pattern"/>
+    </target>
+
+    <target name="help" if="mp3autocut.doHtmlToText">
+        <exec executable="bash" output="${app.name}.txt">
+            <arg value="htmlToTxt.sh"/>
+            <arg value="${app.name}.html"/>
+        </exec>
+    </target>
+
+    <target name="release.jar" depends="shared.release.jar">
+    <zip
+        destfile="releases/${buildID}/${ant.project.name}-${buildID}-jar.zip"
+        compress="true"
+        update="true">
+        <fileset dir=".">
+            <include name="${app.name}.txt"/>
+            <include name="${app.name}.html"/>
+            <include name="gpl3-short.txt"/>
+    </fileset>
+    </zip>
+    </target>
+
+    <target name="dist.src" depends="shared.dist.src, help">
+    <zip
+        destfile="${ant.project.name}-${buildID}-src.zip"
+        compress="true"
+        update="true">
+        <fileset dir="." defaultexcludes="true">
+            <include name="${app.name}.txt"/>
+            <include name="${app.name}.html"/>
+            <include name="gpl3-short.txt"/>
+        </fileset>
+    </zip>
+    </target>
+
+    <target name="addmarkers" if="mp3autocut.hasMarkers">
+    <zip
+        destfile="${binary}"
+        compress="true"
+        update="true">
+        <zipfileset dir="../markers" defaultexcludes="true" prefix="markers">
+            <include name="*.pattern"/>
+        </zipfileset>
+     </zip>
+    </target>
+
+    <target name="addlibs" depends="shared.addlibs, help, addmarkers">
+    <zip
+        destfile="${binary}"
+        compress="true"
+        update="true">
+        <zipfileset dir="." defaultexcludes="true" prefix="help">
+            <include name="${app.name}.txt"/>
+            <include name="gpl3-short.txt"/>
+        </zipfileset>
+    </zip>
+  </target>
+
+</project>

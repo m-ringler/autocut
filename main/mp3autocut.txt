@@ -1,0 +1,162 @@
+MP3AutoCut
+
+Synopsis
+
+java -jar mp3autocut.jar mp3 AUSGABEVERZEICHNIS MP3DATEI1 [MP3DATEI2 ...]
+java -jar mp3autocut.jar mpd MP3DATEI1 [MP3DATEI2 ...]
+
+Beschreibung
+
+[1]MP3AutoCut erleichtert das Schneiden von [2]MP3-Radiomitschnitten,
+indem es nach festen Audio-Mustern sucht, die den Anfang bzw. das Ende
+der Sendung markieren. Beispielsweise kann man für den Anfang der
+Radiosendung einen [3]Jingle und für das Ende der Sendung das
+Nachrichtensignal des Senders verwenden. Zur Zeit werden ausschließlich
+mp3-Dateien mit konstanter Bitrate unterstützt (von Internetradio
+aufgenommene MP3-Dateien haben in der Regel eine konstante Bitrate). Um
+MP3Autocut benutzen zu können, muss Java 6 oder eine spätere
+Java-Version installiert sein.
+
+Audio-Muster
+
+MP3AutoCut liest die Anfangs- und End-Audiomuster aus einem bestimmten
+Verzeichnis. Der Pfad dieses Verzeichnisses wird bei jedem Aufruf von
+MP3AutoCut ausgegeben. Für die Audiomuster muss das gleiche MP3-Format
+(Bitrate, Kanäle, ...) verwendet werden wie für die Aufnahme. Am besten
+erzeugt man die Muster, indem man den relevanten Teil mit
+[4]mp3DirectCut, [5]mp3split oder einem anderen MP3-Schneideprogramm
+aus einer ungeschnittenen Aufnahme extrahiert. Das Anfangs-Muster für
+Aufnahmen mit Namen SENDUNGSNAME_JJJJ-MM-TT.mp3 muss
+SENDUNGSNAME_start.mp3 genannt werden, das End-Muster
+SENDUNGSNAME_end.mp3; die Groß- und Kleinschreibung muss dabei
+berücksichtigt werden. MP3AutoCut schneidet grundsätzlich nach dem
+Anfangs-Muster und vor dem Endmuster.
+
+Beim ersten Einlesen erzeugt MP3AutoCut .pattern-Dateien aus den
+MP3-Dateien und liest danach nur noch die .pattern-Dateien ein. Die
+MP3-Dateien sollten aber immer aufbewahrt werden, da sich das Format
+der .pattern-Datei in künftigen Programmversionen ändern kann.
+Überschreibt man ein MP3-Muster, muss man zugleich die .pattern-Datei
+löschen, damit die Änderung wirksam wird.
+
+Für einige der auf [6]hspiel.mospace.de aufgeführten Sendungen werden
+Anfangs- und/oder Endmuster von mir zur Verfügung gestellt. MP3AutoCut
+versucht bei jeder Ausführung diese [7]Standardmuster zu aktualisieren,
+falls dies erforderlich ist. Soll ein Proxy verwendet werden, so muss
+dieser per
+java -Dhttp.proxyHost=my.proxy.com -Dhttp.proxyPort=8080 -jar mp3autocut.jar ...
+
+angegeben werden. Die Standardmuster werden als .pattern-Dateien
+bereitgestellt, sie werden bei Bedarf in das Muster-Verzeichnis
+extrahiert, wenn dort kein anderes Muster für die betreffende Aufnahme
+gefunden wird. Nach Aktualisierung der Standard-Muster werden daher
+alle .pattern-Dateien im Musterverzeichnis gelöscht. Auch deshalb
+sollte man eigene MP3-Muster also unbedingt aufheben und im
+Muster-Verzeichnis belassen. Der zum Release-Datum aktuelle Satz
+Standardmuster ist bereits in mp3autocut.jar enthalten, so dass die
+Standardmuster auch ohne Internetverbindung genutzt werden können.
+
+Verwendung der Hördat-Sendungsdauer
+
+Wenn der Anfang der Sendung gefunden wurde, verwendet MP3Autocut die
+Information über die Länge der Sendung aus der zu der MP3-Datei
+gehörenden [8]Hördat-XML-Datei, falls es eine solche findet. Es sucht
+dabei im Verzeichnis der Aufnahme eine Datei mit dem gleichen Namen mit
+.xml- statt .mp3-Erweiterung, bei einer von [9]record.sh aufgenommenen
+Datei also SENDUNGSNAME_JJJJ-MM-TT.xml. record.sh mit [10]autotag legt
+die Hördat-XML-Dateien normalerweise an diesem Ort an. Wenn das
+Sendungsende sowohl aus Sendungsanfang plus Hördat-XML als auch per
+End-Muster bestimmt werden kann, wird der frühere Wert verwendet.
+
+Mittels der System-Properties "HoerdatExtraMins" und
+"HoerdatExtraMinsCa" koennen Sie einen Sicherheitspuffer zur
+Hördat-Sendungsdauer dazuaddieren. Fuer 3 Minuten und 30 Sekunden
+beispielsweise
+java -jar -DHoerdatExtraMins=3.5 mp3autocut.jar ...
+
+Wird HoerdatExtraMinsCa gesetzt, so wird diese Pufferzeit für
+Sendungen, deren Dauer in Hoerdat mit "ca." angegeben ist, verwendet.
+Wird nur HoerdatExtraMins angegeben, so wird dieser Wert für alle
+Sendungen verwendet.
+
+Ausgaben
+
+MP3AutoCut erzeugt zur Zeit
+     * Projektdateien für [11]mp3DirectCut oder
+     * geschnittene MP3-Dateien
+
+Zusätzlich werden die Schnittpositionen im Format
+DATEINAME ANFANG_SEK ENDE_SEK ANFANG_BYTES ENDE_BYTES ANFANG_mm.ss.hh ENDE_mm.ss.hh
+
+auf die Konsole ausgegeben, sie können mit Ausgabeumleitung per
+java -jar mp3autocut.jar ARGUMENTE > AUSGABEDATEI
+
+in eine Datei geschrieben werden.
+
+Findet MP3AutoCut keine Schnittpunkte für eine Datei, so wird für diese
+Datei keine Ausgabe erzeugt.
+
+Erzeugung von mp3DirectCut-Projektdateien
+
+Mit [12]mp3DirectCut lassen sich die Schnittpositionen interaktiv
+korrigieren. Der Aufruf zur Erzeugung von mp3DirectCut-Projektdateien
+lautet
+java -jar mp3autocut.jar mpd MP3DATEI1 [MP3DATEI2 ...]
+
+Die mp3DirectCut-Projektdateien werden jeweils im gleichen Verzeichnis
+wie die mp3-Datei abgelegt. Am einfachsten lädt man sie in
+mp3DirectCut, indem man das Datei-Symbol mit der Maus auf das
+mp3DirectCut-Fenster zieht. mp3DirectCut läuft unter Windows und unter
+[13]wine.
+
+Direkte Erzeugung von geschnittenen MP3-Dateien
+
+MP3AutoCut kann auch direkt geschnittene MP3-Dateien erzeugen. Eine
+interaktive Korrektur der Schnittpositionen ist dabei allerdings nicht
+möglich, und derzeit werden vorhandene ID3-Tags in der Regel nicht
+mitkopiert. Der Aufruf zur Erzeugung von geschnittenen mp3-Dateien
+lautet
+java -jar mp3autocut.jar mp3 AUSGABEVERZEICHNIS MP3DATEI1 [MP3DATEI2 ...]
+
+Mehrprozessor-Systeme
+
+Auf Systemen mit mehreren Prozessoren oder Prozessorkernen versucht
+MP3AutoCut alle bei Programmstart verfügbaren Prozessoren zu nutzen,
+indem es ebenso viele Ausführungsstränge (Threads) wie Prozessoren
+startet. Davon abweichend kann man die Anzahl der Ausführungsstränge
+durch Aufruf mit java -DmaxThreads=N begrenzen.
+
+Download
+
+[14]Ausführbare jar-Datei
+[15]Quelltext
+
+
+Enthaltene Open-Source-Bibliotheken
+
+     * [17]jd3lib (MP3Dings fork) von Jonathan Hilliker und Moritz Ringler
+     * [18]JLayer von Matthew McGowan und anderen
+     * [19]Apache Commons Math von der Apache Software Foundation und
+       anderen
+
+Verweise
+
+1. http://hspiel.mospace.de/mp3autocut/
+2. http://hspiel.mospace.de/aufnahme.html
+3. http://de.wikipedia.org/wiki/Jingle
+4. http://mpesch3.de1.cc/mp3dc.html
+5. http://mp3splt.sourceforge.net/
+6. http://hspiel.mospace.de/
+7. http://hspiel.mospace.de/mp3autocut/defaultMarkers.jar
+8. http://hspiel.mospace.de/autotag.html
+9. http://hspiel.mospace.de/aufnahme.html
+10. http://hspiel.mospace.de/autotag.html
+11. http://mpesch3.de1.cc/mp3dc.html
+12. http://mpesch3.de1.cc/mp3dc.html
+13. http://www.winehq.org/
+14. http://hspiel.mospace.de/mp3autocut/mp3autocut-jar.zip
+15. http://hspiel.mospace.de/mp3autocut/mp3autocut-src.zip
+16. http://www.gnu.org/licenses/gpl.html
+17. http://mp3dings.svn.sourceforge.net/viewvc/mp3dings/mp3dings/trunk/src/helliker/id3/
+18. http://www.javazoom.net/javalayer/javalayer.html
+19. http://commons.apache.org/math/
